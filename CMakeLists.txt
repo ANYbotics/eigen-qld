@@ -1,54 +1,141 @@
+# BSD 2-Clause License
 #
-# Copyright 2012-2019 CNRS-UM LIRMM, CNRS-AIST JRL
+# Copyright (c) 2012-2019, CNRS-UM LIRMM, CNRS-AIST JRL
+# All rights reserved.
 #
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are met:
+#
+# 1. Redistributions of source code must retain the above copyright notice, this
+# list of conditions and the following disclaimer.
+#
+# 2. Redistributions in binary form must reproduce the above copyright notice,
+# this list of conditions and the following disclaimer in the documentation
+# and/or other materials provided with the distribution.
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+# DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
+# FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+# DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+# SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+# CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+# OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+# OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-cmake_minimum_required(VERSION 3.1.3)
+cmake_minimum_required(VERSION 3.5.1)
+project(eigen-qld)
 
 set(CMAKE_CXX_STANDARD 11)
+add_compile_options(-Wall -Wextra -Wpedantic)
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
-set(PROJECT_NAME eigen-qld)
-set(PROJECT_DESCRIPTION "QLD QP solver through Eigen3 library.")
-set(PROJECT_URL "https://github.com/jrl-umi3218/eigen-qld")
-set(PROJECT_VERSION 1.2.0)
-set(PROJECT_USE_CMAKE_EXPORT TRUE)
+enable_language(Fortran)
 
-include(cmake/base.cmake)
-include(cmake/cython/cython.cmake)
-include(cmake/msvc-specific.cmake)
+find_package(catkin REQUIRED)
+find_package(Eigen3 REQUIRED)
 
-# Disable -Werror on Unix for now.
-set(CXX_DISABLE_WERROR True)
-set(DOXYGEN_USE_MATHJAX "YES")
+###################################
+## catkin specific configuration ##
+###################################
 
-option(USE_F2C "Use f2c converted code (usually slower)." OFF)
+catkin_package(
+  INCLUDE_DIRS
+    include
+    ${EIGEN3_INCLUDE_DIR} # Eigen does not set variables according to the CMake naming convention.
+  LIBRARIES
+    ${PROJECT_NAME}
+  CATKIN_DEPENDS
+    ${CATKIN_PACKAGE_HEADER_DEPENDENCIES}
+)
 
-if(WIN32)
-  set(USE_FORTRAN_SUBDIRECTORY_DEFAULT ON)
-else()
-  set(USE_FORTRAN_SUBDIRECTORY_DEFAULT OFF)
+###########
+## Build ##
+###########
+
+add_library(${PROJECT_NAME}
+  src/QLD.cpp
+  src/QLDDirect.cpp
+  src/QLD.f
+)
+
+add_dependencies(${PROJECT_NAME}
+  ${catkin_EXPORTED_TARGETS}
+)
+
+target_include_directories(${PROJECT_NAME}
+  PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}> $<INSTALL_INTERFACE:include>
+  PRIVATE
+  include
+  SYSTEM    # Libraries listed after 'SYSTEM' are marked as external, and don't generate warnings.
+    ${catkin_INCLUDE_DIRS}
+    ${EIGEN3_INCLUDE_DIR}
+)
+
+target_link_libraries(${PROJECT_NAME}
+  ${catkin_LIBRARIES}
+)
+
+#############
+## Install ##
+#############
+
+install(
+  TARGETS
+  ${PROJECT_NAME}
+  ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+  LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+  RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+)
+
+install(
+  DIRECTORY
+  include/${PROJECT_NAME}/
+  DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}
+)
+
+##########
+## Test ##
+##########
+
+if(CATKIN_ENABLE_TESTING)
+  find_package(catkin REQUIRED
+    COMPONENTS
+      ${CATKIN_PACKAGE_DEPENDENCIES}
+  )
+
+  catkin_add_gtest(test_${PROJECT_NAME}
+    test/main.cpp
+    test/QPTest.cpp
+  )
 endif()
-option(USE_FORTRAN_SUBDIRECTORY "Use cmake to generate sub project for fortran parts" ${USE_FORTRAN_SUBDIRECTORY_DEFAULT})
 
-project(eigen-qld C CXX)
+if(TARGET test_${PROJECT_NAME})
+  target_link_libraries(test_${PROJECT_NAME}
+    ${PROJECT_NAME}
+  )
 
-add_project_dependency(Eigen3 REQUIRED)
+  target_include_directories(test_${PROJECT_NAME} PRIVATE
+    include
+    SYSTEM
+      ${catkin_INCLUDE_DIRS}
+      ${EIGEN3_INCLUDE_DIR}
+  )
 
-# For MSVC, set local environment variable to enable finding the built dll
-# of the main library when launching ctest with RUN_TESTS
-if(MSVC)
-  if(USE_FORTRAN_SUBDIRECTORY)
-    set(CMAKE_MSVCIDE_RUN_PATH "\$(SolutionDir)/src/\$(Configuration);\$(SolutionDir)/src/qld_fortran")
-  else()
-    set(CMAKE_MSVCIDE_RUN_PATH "\$(SolutionDir)/src/\$(Configuration)")
-  endif()
-endif(MSVC)
-
-add_subdirectory(src)
-
-if(${BUILD_TESTING})
-  add_subdirectory(tests)
+  find_package(cmake_code_coverage QUIET)
+  if(cmake_code_coverage_FOUND)
+    add_gtest_coverage(
+      TEST_BUILD_TARGETS test_${PROJECT_NAME} fixture_test_${PROJECT_NAME}
+    )
+  endif(cmake_code_coverage_FOUND)
 endif()
 
-if(${PYTHON_BINDING})
-  add_subdirectory(binding/python)
-endif()
+###########
+## Clang ##
+###########
+
+find_package(cmake_clang_tools QUIET)
+if(cmake_clang_tools_FOUND)
+  add_default_clang_tooling()
+endif(cmake_clang_tools_FOUND)

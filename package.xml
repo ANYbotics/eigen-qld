@@ -1,0 +1,20 @@
+<?xml version="1.0"?>
+<package format="2">
+  <name>eigen-qld</name>
+  <version>1.2.0</version>
+  <description>QLD QP solver through Eigen3 library..</description>
+  <maintainer email="scaron@anybotics.com">Stéphane Caron</maintainer>
+  <maintainer email="vyuryev@anybotics.com">Valentin Yuryev</maintainer>
+  <license>BSD</license>
+  <url type="website">https://github.com/anybotics/eigen-qld</url>
+  <url type="bugtracker">https://github.com/jrl-umi3218/eigen-qld/issues</url>
+  <author email="joris.vaillant@gmail.com">Joris Vaillant</author>
+  <author email="pierre.gergondet@gmail.com">Pierre Gergondet</author>
+  <buildtool_depend>catkin</buildtool_depend>
+  <build_depend>cmake_clang_tools</build_depend>
+  <build_depend>gfortran</build_depend>
+  <build_depend>eigen</build_depend>
+  <build_export_depend>eigen</build_export_depend>
+  <test_depend>gtest</test_depend>
+  <test_depend>cmake_code_coverage</test_depend>
+</package>

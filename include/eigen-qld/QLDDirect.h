@@ -1,5 +1,30 @@
 /*
- * Copyright 2012-2020 CNRS-UM LIRMM, CNRS-AIST JRL
+ * BSD 2-Clause License
+ *
+ * Copyright (c) 2012-2019, CNRS-UM LIRMM, CNRS-AIST JRL
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *
+ * 1. Redistributions of source code must retain the above copyright notice, this
+ *    list of conditions and the following disclaimer.
+ *
+ * 2. Redistributions in binary form must reproduce the above copyright notice,
+ *    this list of conditions and the following disclaimer in the documentation
+ *    and/or other materials provided with the distribution.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+ * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
+ * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+ * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+ * SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+ * CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+ * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+ * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ *
  */
 
 #pragma once
@@ -11,63 +36,39 @@
 // Eigen
 #include <Eigen/Core>
 
-// eigen-qld
-#include "eigen_qld_api.h"
-
-namespace Eigen
-{
-extern "C" int ql_(const int * m,
-                   const int * me,
-                   const int * mmax,
-                   const int * n,
-                   const int * nmax,
-                   const int * mnn,
-                   const double * c,
-                   const double * d,
-                   const double * a,
-                   const double * b,
-                   const double * xl,
-                   const double * xu,
-                   double * x,
-                   double * u,
-                   const double * eps,
-                   const int * mode,
-                   const int * iout,
-                   int * ifail,
-                   const int * iprint,
-                   double * war,
-                   int * lwar,
-                   int * iwar,
-                   int * liwar);
+namespace Eigen {
+extern "C" int ql_(const int* m, const int* me, const int* mmax, const int* n, const int* nmax, const int* mnn, const double* c,
+                   const double* d, const double* a, const double* b, const double* xl, const double* xu, double* x, double* u,
+                   const double* eps, const int* mode, const int* iout, int* ifail, const int* iprint, double* war, int* lwar, int* iwar,
+                   int* liwar);
 
 /** \brief A lightweight wrapper of the ql algorithm by Professor Schittkowski.
  * It handles the workspace memory to be passed to the solver along with the problem.
  */
-class QLDDirect
-{
-public:
+class QLDDirect {
+ public:
   /** Create a solver without allocating memory.
    * A call to QLDDirect::problem will be necessary before calling QLDDirect::solve
    */
-  EIGEN_QLD_API QLDDirect();
+  QLDDirect();
 
   /** Create a solver and allocate the memory necessary to solve a problem with the given dimensions.
    * See also QLDDirect::problem
    */
-  EIGEN_QLD_API QLDDirect(int nrvar, int nreq, int nrineq, int ldq = -1, int lda = -1, bool verbose = false);
+  QLDDirect(int nrvar, int nreq, int nrineq, int ldq = -1, int lda = -1, bool verbose = false);
 
   /** Specify a file number for output (Fortran unit specification).*/
-  EIGEN_QLD_API void fdOut(int fd);
+  void fdOut(int fd);
   /** Get the file number used for output*/
-  EIGEN_QLD_API int fdOut() const;
+  int fdOut() const;
 
   /** Specify if QLD must generate outputs or not.*/
-  EIGEN_QLD_API void verbose(bool v);
+  void verbose(bool v);
   /** Check if QLD must generate outputs or not.*/
-  EIGEN_QLD_API bool verbose() const;
+  bool verbose() const;
 
   /** Return the fail code of the last call to QLDDirect::solve. 0 means succes.*/
-  EIGEN_QLD_API int fail() const;
+  int fail() const;
 
   /** Allocate the memory necessary to solve a problem with the given dimensions.
    * \param nrvar Size of the variable vector \f$x\f$.
@@ -96,16 +97,16 @@ public:
    * example we consider a matrix \a B that is the block of another one \a M, the
    * leading dimension of \a B will be the row dimension of \a M.
    */
-  EIGEN_QLD_API void problem(int nrvar, int nreq, int nrineq, int ldq = -1, int lda = -1);
+  void problem(int nrvar, int nreq, int nrineq, int ldq = -1, int lda = -1);
 
   /** Return the result from the latest call to QLDDirect::solve. */
-  EIGEN_QLD_API const VectorXd & result() const;
+  const VectorXd& result() const;
 
   /** Return the lagrange multipliers associated with results, with the multipliers
    * corresponding to equality constraints first, then to inequality constraints, then
    * lower bounds, then upper bounds.
    */
-  EIGEN_QLD_API const VectorXd & multipliers() const;
+  const VectorXd& multipliers() const;
 
   /** Solve the problem
    * \f{align}{
@@ -130,44 +131,16 @@ public:
    * \param isDecomp specify if the Cholesky decomposition of \f$Q\f$ is used or not.
    * \param eps Desired final accuracy.
    */
-  template<typename MatObj, typename VecObj, typename MatConstr, typename VecConstr, typename VecVar>
-  bool solve(const MatrixBase<MatObj> & Q,
-             const MatrixBase<VecObj> & c,
-             const MatrixBase<MatConstr> & A,
-             const MatrixBase<VecConstr> & b,
-             const MatrixBase<VecVar> & xl,
-             const MatrixBase<VecVar> & xu,
-             int nreq,
-             bool isDecomp = false,
-             double eps = 1e-12);
+  template <typename MatObj, typename VecObj, typename MatConstr, typename VecConstr, typename VecVar>
+  bool solve(const MatrixBase<MatObj>& Q, const MatrixBase<VecObj>& c, const MatrixBase<MatConstr>& A, const MatrixBase<VecConstr>& b,
+             const MatrixBase<VecVar>& xl, const MatrixBase<VecVar>& xu, int nreq, bool isDecomp = false, double eps = 1e-12);
 
-private:
-  EIGEN_QLD_API inline int fortran_ql(const int * m,
-                                      const int * me,
-                                      const int * mmax,
-                                      const int * n,
-                                      const int * nmax,
-                                      const int * mnn,
-                                      const double * c,
-                                      const double * d,
-                                      const double * a,
-                                      const double * b,
-                                      const double * xl,
-                                      const double * xu,
-                                      double * x,
-                                      double * u,
-                                      const double * eps,
-                                      const int * mode,
-                                      const int * iout,
-                                      int * ifail,
-                                      const int * iprint,
-                                      double * war,
-                                      int * lwar,
-                                      int * iwar,
-                                      int * liwar)
-  {
-    return ql_(m, me, mmax, n, nmax, mnn, c, d, a, b, xl, xu, x, u, eps, mode, iout, ifail, iprint, war, lwar, iwar,
-               liwar);
+ private:
+  inline int fortran_ql(const int* m, const int* me, const int* mmax, const int* n, const int* nmax, const int* mnn, const double* c,
+                        const double* d, const double* a, const double* b, const double* xl, const double* xu, double* x, double* u,
+                        const double* eps, const int* mode, const int* iout, int* ifail, const int* iprint, double* war, int* lwar,
+                        int* iwar, int* liwar) {
+    return ql_(m, me, mmax, n, nmax, mnn, c, d, a, b, xl, xu, x, u, eps, mode, iout, ifail, iprint, war, lwar, iwar, liwar);
   }
 
   VectorXd X_;
@@ -179,24 +152,17 @@ private:
   VectorXi IWAR_;
 };
 
-template<typename MatObj, typename VecObj, typename MatConstr, typename VecConstr, typename VecVar>
-inline bool QLDDirect::solve(const MatrixBase<MatObj> & Q,
-                             const MatrixBase<VecObj> & c,
-                             const MatrixBase<MatConstr> & A,
-                             const MatrixBase<VecConstr> & b,
-                             const MatrixBase<VecVar> & xl,
-                             const MatrixBase<VecVar> & xu,
-                             int nreq,
-                             bool isDecomp,
-                             double eps)
-{
-  assert(A.rows() == b.rows()); // check constraint size
+template <typename MatObj, typename VecObj, typename MatConstr, typename VecConstr, typename VecVar>
+inline bool QLDDirect::solve(const MatrixBase<MatObj>& Q, const MatrixBase<VecObj>& c, const MatrixBase<MatConstr>& A,
+                             const MatrixBase<VecConstr>& b, const MatrixBase<VecVar>& xl, const MatrixBase<VecVar>& xu, int nreq,
+                             bool isDecomp, double eps) {
+  assert(A.rows() == b.rows());  // check constraint size
   assert(A.cols() == X_.rows());
-  assert(Q.rows() == Q.cols()); // check Q is square
-  assert(Q.cols() == X_.rows()); // check Q has the good number of variable
-  assert(c.rows() == X_.rows()); // check C size
-  assert(xl.rows() == X_.rows()); // check XL size
-  assert(xu.rows() == X_.rows()); // check XU size
+  assert(Q.rows() == Q.cols());    // check Q is square
+  assert(Q.cols() == X_.rows());   // check Q has the good number of variable
+  assert(c.rows() == X_.rows());   // check C size
+  assert(xl.rows() == X_.rows());  // check XL size
+  assert(xu.rows() == X_.rows());  // check XU size
 
   int mode = isDecomp ? 0 : 1;
 
@@ -210,15 +176,14 @@ inline bool QLDDirect::solve(const MatrixBase<MatObj> & Q,
   int LWAR = int(WAR_.rows());
   int LIWAR = int(IWAR_.rows());
 
-  assert(LWAR >= (3. * NMAX * NMAX) / 2. + 10. * NMAX + MMAX + M + 1.
-         && "Please call QLD::problem with the correct dimensions.");
+  assert(LWAR >= (3. * NMAX * NMAX) / 2. + 10. * NMAX + MMAX + M + 1. && "Please call QLD::problem with the correct dimensions.");
   assert(LIWAR >= N && "Please call QLD::problem with the correct dimensions.");
 
-  fortran_ql(&M, &nreq, &MMAX, &N, &NMAX, &NMN, Q.derived().data(), c.derived().data(), A.derived().data(),
-             b.derived().data(), xl.derived().data(), xu.derived().data(), X_.data(), U_.data(), &eps, &mode, &fdOut_,
-             &fail_, &verbose_, WAR_.data(), &LWAR, IWAR_.data(), &LIWAR);
+  fortran_ql(&M, &nreq, &MMAX, &N, &NMAX, &NMN, Q.derived().data(), c.derived().data(), A.derived().data(), b.derived().data(),
+             xl.derived().data(), xu.derived().data(), X_.data(), U_.data(), &eps, &mode, &fdOut_, &fail_, &verbose_, WAR_.data(), &LWAR,
+             IWAR_.data(), &LIWAR);
 
   return fail_ == 0;
 }
 
-} // namespace Eigen
+}  // namespace Eigen

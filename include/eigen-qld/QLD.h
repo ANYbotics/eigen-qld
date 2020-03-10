@@ -1,29 +1,52 @@
 /*
- * Copyright 2012-2020 CNRS-UM LIRMM, CNRS-AIST JRL
+ * BSD 2-Clause License
+ *
+ * Copyright (c) 2012-2019, CNRS-UM LIRMM, CNRS-AIST JRL
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *
+ * 1. Redistributions of source code must retain the above copyright notice, this
+ *    list of conditions and the following disclaimer.
+ *
+ * 2. Redistributions in binary form must reproduce the above copyright notice,
+ *    this list of conditions and the following disclaimer in the documentation
+ *    and/or other materials provided with the distribution.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+ * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
+ * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+ * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+ * SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+ * CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+ * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+ * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ *
  */
 
 #pragma once
 
 #include "QLDDirect.h"
 
-namespace Eigen
-{
+namespace Eigen {
 
 /** \brief A wrapper of the ql algorithm by Professor Schittkowski, with some convention
  * changes on the way the constraints are written.
  */
-class QLD : public QLDDirect
-{
-public:
+class QLD : public QLDDirect {
+ public:
   /** Create a solver without allocating memory.
    * A call to QLD::problem will be necessary before calling QLD::solve
    */
-  EIGEN_QLD_API QLD();
+  QLD();
 
   /** Create a solver and allocate the memory necessary to solve a problem with the given dimensions.
    * See also QLD::problem
    */
-  EIGEN_QLD_API QLD(int nrvar, int nreq, int nrineq, int ldq = -1, bool verbose = false);
+  QLD(int nrvar, int nreq, int nrineq, int ldq = -1, bool verbose = false);
 
   /** Allocate the memory necessary to solve a problem with the given dimensions.
    * \param nrvar Size of the variable vector \f$x\f$.
@@ -33,7 +56,7 @@ public:
    * smaller than \p nrvar, \p nrvar will be used instead (which is the default case).
    *
    */
-  EIGEN_QLD_API void problem(int nrvar, int nreq, int nrineq, int ldq = -1);
+  void problem(int nrvar, int nreq, int nrineq, int ldq = -1);
 
   /** Return the lagrange multipliers associated with results, with the multipliers
    * corresponding to equality constraints first, then to inequality constraints, then
@@ -45,7 +68,7 @@ public:
    * For now, QLD::solve is changing automatically the constraints, but not the multipliers.
    * After a call to QLD::solveNoOverhead, the multipliers have the same meaning as for ql.
    */
-  EIGEN_QLD_API const VectorXd & multipliers() const;
+  const VectorXd& multipliers() const;
 
   /** Solve the problem
    * \f{align}{
@@ -73,50 +96,23 @@ public:
    *
    * This is a wrapper around QLDDirect::solver.
    */
-  template<typename MatObj,
-           typename VecObj,
-           typename MatEq,
-           typename VecEq,
-           typename MatIneq,
-           typename VecIneq,
-           typename VecVar>
-  bool solve(const MatrixBase<MatObj> & Q,
-             const MatrixBase<VecObj> & c,
-             const MatrixBase<MatEq> & Aeq,
-             const MatrixBase<VecEq> & beq,
-             const MatrixBase<MatIneq> & Aineq,
-             const MatrixBase<VecIneq> & bineq,
-             const MatrixBase<VecVar> & xl,
-             const MatrixBase<VecVar> & xu,
-             bool isDecomp = false,
-             double eps = 1e-12);
+  template <typename MatObj, typename VecObj, typename MatEq, typename VecEq, typename MatIneq, typename VecIneq, typename VecVar>
+  bool solve(const MatrixBase<MatObj>& Q, const MatrixBase<VecObj>& c, const MatrixBase<MatEq>& Aeq, const MatrixBase<VecEq>& beq,
+             const MatrixBase<MatIneq>& Aineq, const MatrixBase<VecIneq>& bineq, const MatrixBase<VecVar>& xl, const MatrixBase<VecVar>& xu,
+             bool isDecomp = false, double eps = 1e-12);
 
-private:
+ private:
   MatrixXd A_;
   VectorXd B_;
 };
 
-template<typename MatObj,
-         typename VecObj,
-         typename MatEq,
-         typename VecEq,
-         typename MatIneq,
-         typename VecIneq,
-         typename VecVar>
-inline bool QLD::solve(const MatrixBase<MatObj> & Q,
-                       const MatrixBase<VecObj> & c,
-                       const MatrixBase<MatEq> & Aeq,
-                       const MatrixBase<VecEq> & beq,
-                       const MatrixBase<MatIneq> & Aineq,
-                       const MatrixBase<VecIneq> & bineq,
-                       const MatrixBase<VecVar> & xl,
-                       const MatrixBase<VecVar> & xu,
-                       bool isDecomp,
-                       double eps)
-{
-  assert(Aeq.rows() == beq.rows()); // check equality size
+template <typename MatObj, typename VecObj, typename MatEq, typename VecEq, typename MatIneq, typename VecIneq, typename VecVar>
+inline bool QLD::solve(const MatrixBase<MatObj>& Q, const MatrixBase<VecObj>& c, const MatrixBase<MatEq>& Aeq, const MatrixBase<VecEq>& beq,
+                       const MatrixBase<MatIneq>& Aineq, const MatrixBase<VecIneq>& bineq, const MatrixBase<VecVar>& xl,
+                       const MatrixBase<VecVar>& xu, bool isDecomp, double eps) {
+  assert(Aeq.rows() == beq.rows());  // check equality size
   assert(Aeq.cols() == A_.cols());
-  assert(Aineq.rows() == bineq.rows()); // check inequality size
+  assert(Aineq.rows() == bineq.rows());  // check inequality size
   assert(Aineq.cols() == A_.cols());
 
   int nreq = int(beq.rows());
@@ -131,4 +127,4 @@ inline bool QLD::solve(const MatrixBase<MatObj> & Q,
   return QLDDirect::solve(Q, c, A_.topRows(nreq + nrineq), B_.head(nreq + nrineq), xl, xu, nreq, isDecomp, eps);
 }
 
-} // namespace Eigen
+}  // namespace Eigen

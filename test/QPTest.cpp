@@ -1,28 +1,43 @@
 /*
- * Copyright 2012-2019 CNRS-UM LIRMM, CNRS-AIST JRL
+ * BSD 2-Clause License
+ *
+ * Copyright (c) 2012-2019, CNRS-UM LIRMM, CNRS-AIST JRL
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *
+ * 1. Redistributions of source code must retain the above copyright notice, this
+ *    list of conditions and the following disclaimer.
+ *
+ * 2. Redistributions in binary form must reproduce the above copyright notice,
+ *    this list of conditions and the following disclaimer in the documentation
+ *    and/or other materials provided with the distribution.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+ * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
+ * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+ * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+ * SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+ * CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+ * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+ * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ *
  */
 
-// includes
-// std
-#include <iostream>
-
-// boost
-#define BOOST_TEST_DYN_LINK
-#define BOOST_TEST_MODULE Eigen_QLD
-#include <boost/math/constants/constants.hpp>
-#include <boost/test/floating_point_comparison.hpp>
-#include <boost/test/unit_test.hpp>
+// gtest
+#include <gtest/gtest.h>
 
 // Eigen
 #include <Eigen/Dense>
 
 // EigenQP
-#include <eigen-qld/QLD.h>
+#include "eigen-qld/QLD.h"
 
-struct QP1
-{
-  QP1()
-  {
+struct QP1 {
+  QP1() {
     nrvar = 6;
     nreq = 3;
     nrineq = 2;
@@ -68,19 +83,14 @@ struct QP1
   Eigen::VectorXd C, Beq, Bineq, B, XL, XU, X;
 };
 
-void ineqWithXBounds(Eigen::MatrixXd & Aineq,
-                     Eigen::VectorXd & Bineq,
-                     const Eigen::VectorXd & XL,
-                     const Eigen::VectorXd & XU)
-{
+void ineqWithXBounds(Eigen::MatrixXd& Aineq, Eigen::VectorXd& Bineq, const Eigen::VectorXd& XL, const Eigen::VectorXd& XU) {
   double inf = std::numeric_limits<double>::infinity();
 
   std::vector<std::pair<int, double>> lbounds, ubounds;
 
-  for(int i = 0; i < XL.rows(); ++i)
-  {
-    if(XL[i] != -inf) lbounds.emplace_back(i, XL[i]);
-    if(XU[i] != inf) ubounds.emplace_back(i, XU[i]);
+  for (int i = 0; i < XL.rows(); ++i) {
+    if (XL[i] != -inf) lbounds.emplace_back(i, XL[i]);
+    if (XU[i] != inf) ubounds.emplace_back(i, XU[i]);
   }
 
   long int nrconstr = Bineq.rows() + static_cast<long int>(lbounds.size()) + static_cast<long int>(ubounds.size());
@@ -93,17 +103,15 @@ void ineqWithXBounds(Eigen::MatrixXd & Aineq,
 
   int start = static_cast<int>(Aineq.rows());
 
-  for(int i = 0; i < static_cast<int>(lbounds.size()); ++i)
-  {
-    const auto & b = lbounds[i];
+  for (int i = 0; i < static_cast<int>(lbounds.size()); ++i) {
+    const auto& b = lbounds[i];
     A(start, b.first) = -1.;
     B(start) = -b.second;
     ++start;
   }
 
-  for(int i = 0; i < static_cast<int>(ubounds.size()); ++i)
-  {
-    const auto & b = ubounds[i];
+  for (int i = 0; i < static_cast<int>(ubounds.size()); ++i) {
+    const auto& b = ubounds[i];
     A(start, b.first) = 1.;
     B(start) = b.second;
     ++start;
@@ -113,49 +121,33 @@ void ineqWithXBounds(Eigen::MatrixXd & Aineq,
   Bineq = B;
 }
 
-BOOST_AUTO_TEST_CASE(QLD)
-{
+TEST(QPTest, QLD) {  // NOLINT
   QP1 qp1;
-
   Eigen::QLD qld(qp1.nrvar, qp1.nreq, qp1.nrineq);
-
   qld.solve(qp1.Q, qp1.C, qp1.Aeq, qp1.Beq, qp1.Aineq, qp1.Bineq, qp1.XL, qp1.XU);
-  BOOST_CHECK_SMALL((qld.result() - qp1.X).norm(), 1e-6);
-
+  ASSERT_NEAR((qld.result() - qp1.X).norm(), 0., 1e-6);
   Eigen::QLDDirect qldd(qp1.nrvar, qp1.nreq, qp1.nrineq);
-
   qldd.solve(qp1.Q, qp1.C, qp1.A, qp1.B, qp1.XL, qp1.XU, 3);
-  BOOST_CHECK_SMALL((qld.result() - qp1.X).norm(), 1e-6);
+  ASSERT_NEAR((qld.result() - qp1.X).norm(), 0., 1e-6);
 }
 
-BOOST_AUTO_TEST_CASE(QLDSize)
-{
+TEST(QPTest, QLDSize) {  // NOLINT
   QP1 qp1;
-
   Eigen::QLD qld(qp1.nrvar, qp1.nreq + 10, qp1.nrineq + 22);
-
   qld.solve(qp1.Q, qp1.C, qp1.Aeq, qp1.Beq, qp1.Aineq, qp1.Bineq, qp1.XL, qp1.XU);
-
-  BOOST_CHECK_SMALL((qld.result() - qp1.X).norm(), 1e-6);
+  ASSERT_NEAR((qld.result() - qp1.X).norm(), 0., 1e-6);
 }
 
-BOOST_AUTO_TEST_CASE(IneqWithXBounds)
-{
+TEST(QPTest, IneqWithXBounds) {  // NOLINT
   QP1 qp1;
-
   ineqWithXBounds(qp1.Aineq, qp1.Bineq, qp1.XL, qp1.XU);
-
   double inf = std::numeric_limits<double>::infinity();
-  for(int i = 0; i < qp1.nrvar; ++i)
-  {
+  for (int i = 0; i < qp1.nrvar; ++i) {
     qp1.XL[i] = -inf;
     qp1.XU[i] = inf;
   }
-
   int nrineq = static_cast<int>(qp1.Aineq.rows());
   Eigen::QLD qld(qp1.nrvar, qp1.nreq, nrineq);
-
   qld.solve(qp1.Q, qp1.C, qp1.Aeq, qp1.Beq, qp1.Aineq, qp1.Bineq, qp1.XL, qp1.XU);
-
-  BOOST_CHECK_SMALL((qld.result() - qp1.X).norm(), 1e-6);
+  ASSERT_NEAR((qld.result() - qp1.X).norm(), 0., 1e-6);
 }
