@@ -126,7 +126,7 @@ if(TARGET test_${PROJECT_NAME})
   find_package(cmake_code_coverage QUIET)
   if(cmake_code_coverage_FOUND)
     add_gtest_coverage(
-      TEST_BUILD_TARGETS test_${PROJECT_NAME} fixture_test_${PROJECT_NAME}
+      TEST_BUILD_TARGETS test_${PROJECT_NAME}
     )
   endif(cmake_code_coverage_FOUND)
 endif()
